@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "github.com/noble-gase/ne/protokit";
+option go_package = "github.com/noble-gase/neon/protokit";
 
 package protokit;
 

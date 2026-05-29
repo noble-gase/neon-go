@@ -6,8 +6,8 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/noble-gase/ne/protokit"
-	"github.com/noble-gase/ne/validkit"
+	"github.com/noble-gase/neon/protokit"
+	"github.com/noble-gase/neon/validkit"
 	"google.golang.org/protobuf/proto"
 )
 

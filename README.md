@@ -1,13 +1,13 @@
-# 氖-Ne
+# neno-go
 
 [![golang](https://img.shields.io/badge/Language-Go-green.svg?style=flat)](https://golang.org)
-[![pkg.go.dev](https://img.shields.io/badge/dev-reference-007d9c?logo=go&logoColor=white&style=flat)](https://pkg.go.dev/github.com/noble-gase/ne)
+[![pkg.go.dev](https://img.shields.io/badge/dev-reference-007d9c?logo=go&logoColor=white&style=flat)](https://pkg.go.dev/github.com/noble-gase/neon)
 [![MIT](http://img.shields.io/badge/license-MIT-brightgreen.svg)](http://opensource.org/licenses/MIT)
 
-[氖-Ne] Go开发工具包
+[氖-Neon] Go开发工具包
 
 ```shell
-go get -u github.com/noble-gase/ne
+go get -u github.com/noble-gase/neon
 ```
 
 | 模块      | 说明                                                                                         |

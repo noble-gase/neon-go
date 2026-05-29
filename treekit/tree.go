@@ -8,8 +8,6 @@ type Node[E comparable] interface {
 
 // TreeNode 树定义
 type TreeNode[T Node[E], E comparable] struct {
-	ID   E                 `json:"id"`
-	PID  E                 `json:"pid,omitempty"`
 	Data T                 `json:"data"`
 	Kids []*TreeNode[T, E] `json:"kids,omitempty"`
 }
@@ -20,8 +18,6 @@ func buildTree[T Node[E], E comparable](group map[E][]T, rootId E) []*TreeNode[T
 	root := make([]*TreeNode[T, E], 0, count)
 	for _, v := range nodes {
 		root = append(root, &TreeNode[T, E]{
-			ID:   v.ID(),
-			PID:  v.PID(),
 			Data: v,
 			Kids: buildTree(group, v.ID()),
 		})

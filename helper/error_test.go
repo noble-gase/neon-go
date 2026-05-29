@@ -6,7 +6,7 @@ import (
 	"log/slog"
 	"testing"
 
-	"github.com/noble-gase/ne/codekit"
+	"github.com/noble-gase/neon/codekit"
 )
 
 type demo struct {

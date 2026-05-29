@@ -1,4 +1,4 @@
-module github.com/noble-gase/ne
+module github.com/noble-gase/neon
 
 go 1.25.0
 

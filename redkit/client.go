@@ -5,7 +5,7 @@ import (
 	"crypto/tls"
 	"time"
 
-	"github.com/noble-gase/ne/helper"
+	"github.com/noble-gase/neon/helper"
 	"github.com/redis/go-redis/v9"
 	"github.com/redis/go-redis/v9/maintnotifications"
 	"golang.org/x/sync/singleflight"

@@ -8,7 +8,7 @@ import (
 
 	. "github.com/go-jet/jet/v2/postgres"
 	"github.com/go-jet/jet/v2/qrm"
-	"github.com/noble-gase/ne/sqlkit/internal"
+	"github.com/noble-gase/neon/sqlkit/internal"
 )
 
 // M 用于 PostgreSQL 的 INSERT & UPDATE
@@ -32,7 +32,7 @@ func (m M) Split() (cols ColumnList, vals []any) {
 //	// 导入模块
 //	import (
 //		jet "github.com/go-jet/jet/v2/postgres"
-//		"github.com/noble-gase/ne/sqlkit/pgsql"
+//		"github.com/noble-gase/neon/sqlkit/pgsql"
 //	)
 //
 //	// 语句示例
@@ -64,7 +64,7 @@ func Insert[T any](ctx context.Context, db qrm.DB, stmt InsertStatement) (T, err
 //	// 导入模块
 //	import (
 //		jet "github.com/go-jet/jet/v2/postgres"
-//		"github.com/noble-gase/ne/sqlkit/pgsql"
+//		"github.com/noble-gase/neon/sqlkit/pgsql"
 //	)
 //
 //	// 语句示例
@@ -102,7 +102,7 @@ func BatchInsert[T any](ctx context.Context, db qrm.DB, stmt InsertStatement) ([
 //	// 导入模块
 //	import (
 //		jet "github.com/go-jet/jet/v2/postgres"
-//		"github.com/noble-gase/ne/sqlkit/pgsql"
+//		"github.com/noble-gase/neon/sqlkit/pgsql"
 //	)
 //
 //	// 语句示例
@@ -139,7 +139,7 @@ func Update(ctx context.Context, db qrm.DB, stmt UpdateStatement) (int64, error)
 //	// 导入模块
 //	import (
 //		jet "github.com/go-jet/jet/v2/postgres"
-//		"github.com/noble-gase/ne/sqlkit/pgsql"
+//		"github.com/noble-gase/neon/sqlkit/pgsql"
 //	)
 //
 //	// 语句示例
@@ -176,7 +176,7 @@ func Delete(ctx context.Context, db qrm.DB, stmt DeleteStatement) (int64, error)
 //	// 导入模块
 //	import (
 //		jet "github.com/go-jet/jet/v2/postgres"
-//		"github.com/noble-gase/ne/sqlkit/pgsql"
+//		"github.com/noble-gase/neon/sqlkit/pgsql"
 //	)
 //
 //	// 语句示例
@@ -215,7 +215,7 @@ func FindOne[T any](ctx context.Context, db qrm.DB, stmt SelectStatement) (*T, e
 //	// 导入模块
 //	import (
 //		jet "github.com/go-jet/jet/v2/postgres"
-//		"github.com/noble-gase/ne/sqlkit/pgsql"
+//		"github.com/noble-gase/neon/sqlkit/pgsql"
 //	)
 //
 //	// 语句示例
@@ -249,7 +249,7 @@ func FindAll[T any](ctx context.Context, db qrm.DB, stmt SelectStatement) ([]T, 
 //	// 导入模块
 //	import (
 //		jet "github.com/go-jet/jet/v2/postgres"
-//		"github.com/noble-gase/ne/sqlkit/pgsql"
+//		"github.com/noble-gase/neon/sqlkit/pgsql"
 //	)
 //
 //	// 执行方法
@@ -284,7 +284,7 @@ func Count(ctx context.Context, db qrm.DB, fn func(count SelectStatement) Select
 //	// 导入模块
 //	import (
 //		jet "github.com/go-jet/jet/v2/postgres"
-//		"github.com/noble-gase/ne/sqlkit/pgsql"
+//		"github.com/noble-gase/neon/sqlkit/pgsql"
 //	)
 //
 //	// 执行方法

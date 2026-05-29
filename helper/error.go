@@ -7,7 +7,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/noble-gase/ne/codekit"
+	"github.com/noble-gase/neon/codekit"
 )
 
 type NilError string

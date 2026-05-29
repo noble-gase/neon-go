@@ -7,7 +7,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/noble-gase/ne/sqlkit/internal"
+	"github.com/noble-gase/neon/sqlkit/internal"
 )
 
 // Config 数据库初始化配置

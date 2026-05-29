@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/noble-gase/ne/codekit"
+	"github.com/noble-gase/neon/codekit"
 )
 
 const MaxBufSize = 32 << 10 // 32KB

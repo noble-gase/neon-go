@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/noble-gase/ne/helper"
+	"github.com/noble-gase/neon/helper"
 	"github.com/redis/go-redis/v9"
 )
 

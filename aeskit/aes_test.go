@@ -1,4 +1,4 @@
-package cryptokit
+package aeskit
 
 import (
 	"encoding/base64"

@@ -16,7 +16,6 @@ go get -u github.com/noble-gase/neon
 | array    | 切片常用操作                                                                                 |
 | conv     | 类型转换                                                                                     |
 | coord    | 距离、方位角、经纬度与平面直角坐标系的相互转化                                               |
-| helper   | 常用的辅助方法合集，包含：HTTP、IP、VersionCompare 等                                        |
 | httpzip  | 远程获取 `ZIP` 压缩包中的文件内容                                                            |
 | hashkit  | 封装 Hash 常用方法                                                                           |
 | imgkit   | 图片处理，如：缩略图、裁切、标注等                                                           |

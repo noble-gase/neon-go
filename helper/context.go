@@ -10,6 +10,8 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
+const XTraceId = "x-trace-id"
+
 // CtxWithMDValue sets key-value pairs to the incoming metadata
 // and returns a new context.
 func CtxWithMDValue(ctx context.Context, key string, vals ...string) context.Context {

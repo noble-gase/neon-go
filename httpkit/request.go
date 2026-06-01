@@ -1,12 +1,10 @@
-package helper
+package httpkit
 
 import (
 	"context"
-	"crypto/tls"
 	"errors"
 	"fmt"
 	"log/slog"
-	"net"
 	"net/http"
 	"net/url"
 	"strings"
@@ -14,58 +12,6 @@ import (
 
 	"github.com/go-resty/resty/v2"
 )
-
-const XTraceId = "x-trace-id"
-
-const (
-	HeaderAccept        = "Accept"
-	HeaderAuthorization = "Authorization"
-	HeaderContentType   = "Content-Type"
-)
-
-const (
-	ContentText          = "text/plain; charset=utf-8"
-	ContentJSON          = "application/json"
-	ContentXML           = "application/xml"
-	ContentForm          = "application/x-www-form-urlencoded"
-	ContentStream        = "application/octet-stream"
-	ContentMultipartForm = "multipart/form-data"
-)
-
-func ContentType(h http.Header) string {
-	content := h.Get(HeaderContentType)
-	for i, char := range content {
-		if char == ' ' || char == ';' {
-			return content[:i]
-		}
-	}
-	return content
-}
-
-// RestyClient default client for http request
-var RestyClient = resty.NewWithClient(NewHttpClient())
-
-// NewHttpClient returns a http client
-func NewHttpClient() *http.Client {
-	return &http.Client{
-		Transport: &http.Transport{
-			Proxy: http.ProxyFromEnvironment,
-			DialContext: (&net.Dialer{
-				Timeout:   30 * time.Second,
-				KeepAlive: 60 * time.Second,
-			}).DialContext,
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
-			MaxIdleConns:          0,
-			MaxIdleConnsPerHost:   1000,
-			MaxConnsPerHost:       1000,
-			IdleConnTimeout:       60 * time.Second,
-			TLSHandshakeTimeout:   10 * time.Second,
-			ExpectContinueTimeout: time.Second,
-		},
-	}
-}
 
 type ApiResult[T any] struct {
 	Code    int    `json:"code"`
@@ -114,7 +60,7 @@ func HttpGet(ctx context.Context, url string, query url.Values, header ...http.H
 		slog.LogAttrs(ctx, level, "http request", attrs...)
 	}()
 
-	req := RestyClient.R().
+	req := Client().R().
 		SetContext(ctx).
 		SetQueryParamsFromValues(query)
 	if len(header) != 0 {
@@ -154,7 +100,7 @@ func HttpGetX[T any](ctx context.Context, url string, query url.Values, header .
 
 	ret = new(ApiResult[T])
 
-	req := RestyClient.R().
+	req := Client().R().
 		SetContext(ctx).
 		SetQueryParamsFromValues(query).
 		SetResult(ret)
@@ -194,7 +140,7 @@ func HttpPost(ctx context.Context, url string, body any, header ...http.Header) 
 		slog.LogAttrs(ctx, level, "http request", attrs...)
 	}()
 
-	req := RestyClient.R().
+	req := Client().R().
 		SetContext(ctx).
 		SetBody(body)
 	if len(header) != 0 {
@@ -234,7 +180,7 @@ func HttpPostX[T any](ctx context.Context, url string, body any, header ...http.
 
 	ret = new(ApiResult[T])
 
-	req := RestyClient.R().
+	req := Client().R().
 		SetContext(ctx).
 		SetBody(body).
 		SetResult(ret)
@@ -274,7 +220,7 @@ func HttpForm(ctx context.Context, url string, form url.Values, header ...http.H
 		slog.LogAttrs(ctx, level, "http request", attrs...)
 	}()
 
-	req := RestyClient.R().
+	req := Client().R().
 		SetContext(ctx).
 		SetFormDataFromValues(form)
 	if len(header) != 0 {
@@ -314,7 +260,7 @@ func HttpFormX[T any](ctx context.Context, url string, form url.Values, header .
 
 	ret = new(ApiResult[T])
 
-	req := RestyClient.R().
+	req := Client().R().
 		SetContext(ctx).
 		SetFormDataFromValues(form).
 		SetResult(ret)

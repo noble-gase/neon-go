@@ -10,7 +10,7 @@ require (
 	github.com/go-jet/jet/v2 v2.15.0
 	github.com/go-playground/locales v0.14.1
 	github.com/go-playground/universal-translator v0.18.1
-	github.com/go-playground/validator/v10 v10.30.2
+	github.com/go-playground/validator/v10 v10.30.3
 	github.com/go-resty/resty/v2 v2.17.2
 	github.com/go-sql-driver/mysql v1.10.0
 	github.com/google/uuid v1.6.0
@@ -22,7 +22,7 @@ require (
 	github.com/shopspring/decimal v1.4.0
 	github.com/stretchr/testify v1.11.1
 	golang.org/x/crypto v0.52.0
-	golang.org/x/exp v0.0.0-20260528193900-50dc527dd6c7
+	golang.org/x/exp v0.0.0-20260529124908-c761662dc8c9
 	golang.org/x/sync v0.20.0
 	google.golang.org/grpc v1.81.1
 	google.golang.org/protobuf v1.36.11

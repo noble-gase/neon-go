@@ -21,7 +21,7 @@ go get -u github.com/noble-gase/neon
 | hashkit  | 封装 Hash 常用方法                                                                           |
 | imgkit   | 图片处理，如：缩略图、裁切、标注等                                                           |
 | treekit  | 基于泛型的树形结构，可用于：菜单和组织关系等                                                 |
-| pbkit    | 实现 `url.Values` 和 `proto.Message` 的相互转换                                              |
+| protokit | 实现 `url.Values` 和 `proto.Message` 的相互转换                                              |
 | redkit   | 基于 `singleflight` 封装 Redis 常用操作                                                      |
 | redlock  | 基于 Redis 的分布式锁                                                                        |
 | retry    | 重试操作                                                                                     |

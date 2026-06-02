@@ -36,7 +36,7 @@ func (ct *CipherText) Tag() []byte {
 // ------------------------------------ AES-CBC ------------------------------------
 
 // EncryptCBC AES-CBC 加密(pkcs#7, 默认填充BlockSize)
-func EncryptCBC(key, iv, data []byte, paddingSize ...uint8) (*CipherText, error) {
+func EncryptCBC(key, iv, data []byte, paddingSize ...int) (*CipherText, error) {
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, err
@@ -47,7 +47,7 @@ func EncryptCBC(key, iv, data []byte, paddingSize ...uint8) (*CipherText, error)
 
 	blockSize := block.BlockSize()
 	if len(paddingSize) != 0 {
-		blockSize = int(paddingSize[0])
+		blockSize = paddingSize[0]
 	}
 	paddingBytes, err := pkcs7_padding(data, blockSize)
 	if err != nil {
@@ -66,7 +66,7 @@ func EncryptCBC(key, iv, data []byte, paddingSize ...uint8) (*CipherText, error)
 }
 
 // DecryptCBC AES-CBC 解密(pkcs#7, 默认填充BlockSize；若加密时使用了自定义 paddingSize，解密需传入相同值)
-func DecryptCBC(key, iv, data []byte, paddingSize ...uint8) ([]byte, error) {
+func DecryptCBC(key, iv, data []byte, paddingSize ...int) ([]byte, error) {
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, err
@@ -82,7 +82,7 @@ func DecryptCBC(key, iv, data []byte, paddingSize ...uint8) ([]byte, error) {
 
 	blockSize := block.BlockSize()
 	if len(paddingSize) != 0 {
-		blockSize = int(paddingSize[0])
+		blockSize = paddingSize[0]
 	}
 
 	out := make([]byte, len(data))
@@ -94,7 +94,7 @@ func DecryptCBC(key, iv, data []byte, paddingSize ...uint8) ([]byte, error) {
 // ------------------------------------ AES-ECB ------------------------------------
 
 // EncryptECB AES-ECB 加密(pkcs#7, 默认填充BlockSize)
-func EncryptECB(key, data []byte, paddingSize ...uint8) (*CipherText, error) {
+func EncryptECB(key, data []byte, paddingSize ...int) (*CipherText, error) {
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, err
@@ -102,7 +102,7 @@ func EncryptECB(key, data []byte, paddingSize ...uint8) (*CipherText, error) {
 
 	blockSize := block.BlockSize()
 	if len(paddingSize) != 0 {
-		blockSize = int(paddingSize[0])
+		blockSize = paddingSize[0]
 	}
 	paddingBytes, err := pkcs7_padding(data, blockSize)
 	if err != nil {
@@ -116,13 +116,12 @@ func EncryptECB(key, data []byte, paddingSize ...uint8) (*CipherText, error) {
 
 	out := make([]byte, len(paddingBytes))
 	bm.CryptBlocks(out, paddingBytes)
-	return &CipherText{
-		bytes: out,
-	}, nil
+
+	return &CipherText{bytes: out}, nil
 }
 
 // DecryptECB AES-ECB 解密(pkcs#7, 默认填充BlockSize；若加密时使用了自定义 paddingSize，解密需传入相同值)
-func DecryptECB(key, data []byte, paddingSize ...uint8) ([]byte, error) {
+func DecryptECB(key, data []byte, paddingSize ...int) ([]byte, error) {
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, err
@@ -135,7 +134,7 @@ func DecryptECB(key, data []byte, paddingSize ...uint8) ([]byte, error) {
 
 	blockSize := block.BlockSize()
 	if len(paddingSize) != 0 {
-		blockSize = int(paddingSize[0])
+		blockSize = paddingSize[0]
 	}
 
 	out := make([]byte, len(data))
@@ -159,9 +158,8 @@ func EncryptCTR(key, iv, data []byte) (*CipherText, error) {
 	out := make([]byte, len(data))
 	stream := cipher.NewCTR(block, iv)
 	stream.XORKeyStream(out, data)
-	return &CipherText{
-		bytes: out,
-	}, nil
+
+	return &CipherText{bytes: out}, nil
 }
 
 // DecryptCTR AES-CTR 解密
@@ -177,6 +175,7 @@ func DecryptCTR(key, iv, data []byte) ([]byte, error) {
 	out := make([]byte, len(data))
 	stream := cipher.NewCTR(block, iv)
 	stream.XORKeyStream(out, data)
+
 	return out, nil
 }
 
@@ -246,6 +245,5 @@ func DecryptGCM(key, nonce []byte, data, aad []byte, opt *GCMOption) ([]byte, er
 	if len(nonce) != aead.NonceSize() {
 		return nil, errors.New("incorrect nonce length given to GCM")
 	}
-
 	return aead.Open(nil, nonce, data, aad)
 }

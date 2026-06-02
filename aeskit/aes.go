@@ -49,22 +49,24 @@ func EncryptCBC(key, iv, data []byte, paddingSize ...uint8) (*CipherText, error)
 	if len(paddingSize) != 0 {
 		blockSize = int(paddingSize[0])
 	}
-	data = pkcs7padding(data, blockSize)
+	paddingBytes, err := pkcs7_padding(data, blockSize)
+	if err != nil {
+		return nil, err
+	}
 
 	bm := cipher.NewCBCEncrypter(block, iv)
-	if len(data)%bm.BlockSize() != 0 {
+	if len(paddingBytes)%bm.BlockSize() != 0 {
 		return nil, errors.New("input not full blocks")
 	}
 
-	out := make([]byte, len(data))
-	bm.CryptBlocks(out, data)
-	return &CipherText{
-		bytes: out,
-	}, nil
+	out := make([]byte, len(paddingBytes))
+	bm.CryptBlocks(out, paddingBytes)
+
+	return &CipherText{bytes: out}, nil
 }
 
-// DecryptCBC AES-CBC 解密(pkcs#7)
-func DecryptCBC(key, iv, data []byte) ([]byte, error) {
+// DecryptCBC AES-CBC 解密(pkcs#7, 默认填充BlockSize；若加密时使用了自定义 paddingSize，解密需传入相同值)
+func DecryptCBC(key, iv, data []byte, paddingSize ...uint8) ([]byte, error) {
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, err
@@ -78,9 +80,15 @@ func DecryptCBC(key, iv, data []byte) ([]byte, error) {
 		return nil, errors.New("input not full blocks")
 	}
 
+	blockSize := block.BlockSize()
+	if len(paddingSize) != 0 {
+		blockSize = int(paddingSize[0])
+	}
+
 	out := make([]byte, len(data))
 	bm.CryptBlocks(out, data)
-	return pkcs7unpadding(out), nil
+
+	return pkcs7_unpadding(out, blockSize)
 }
 
 // ------------------------------------ AES-ECB ------------------------------------
@@ -96,22 +104,25 @@ func EncryptECB(key, data []byte, paddingSize ...uint8) (*CipherText, error) {
 	if len(paddingSize) != 0 {
 		blockSize = int(paddingSize[0])
 	}
-	data = pkcs7padding(data, blockSize)
+	paddingBytes, err := pkcs7_padding(data, blockSize)
+	if err != nil {
+		return nil, err
+	}
 
 	bm := NewECBEncrypter(block)
-	if len(data)%bm.BlockSize() != 0 {
+	if len(paddingBytes)%bm.BlockSize() != 0 {
 		return nil, errors.New("input not full blocks")
 	}
 
-	out := make([]byte, len(data))
-	bm.CryptBlocks(out, data)
+	out := make([]byte, len(paddingBytes))
+	bm.CryptBlocks(out, paddingBytes)
 	return &CipherText{
 		bytes: out,
 	}, nil
 }
 
-// DecryptECB AES-ECB 解密(pkcs#7)
-func DecryptECB(key, data []byte) ([]byte, error) {
+// DecryptECB AES-ECB 解密(pkcs#7, 默认填充BlockSize；若加密时使用了自定义 paddingSize，解密需传入相同值)
+func DecryptECB(key, data []byte, paddingSize ...uint8) ([]byte, error) {
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, err
@@ -122,81 +133,15 @@ func DecryptECB(key, data []byte) ([]byte, error) {
 		return nil, errors.New("input not full blocks")
 	}
 
+	blockSize := block.BlockSize()
+	if len(paddingSize) != 0 {
+		blockSize = int(paddingSize[0])
+	}
+
 	out := make([]byte, len(data))
 	bm.CryptBlocks(out, data)
-	return pkcs7unpadding(out), nil
-}
 
-// ------------------------------------ AES-CFB ------------------------------------
-
-// EncryptCFB AES-CFB 加密
-func EncryptCFB(key, iv, data []byte) (*CipherText, error) {
-	block, err := aes.NewCipher(key)
-	if err != nil {
-		return nil, err
-	}
-	if len(iv) != block.BlockSize() {
-		return nil, errors.New("IV length must equal block size")
-	}
-
-	out := make([]byte, len(data))
-	stream := cipher.NewCFBEncrypter(block, iv)
-	stream.XORKeyStream(out, data)
-	return &CipherText{
-		bytes: out,
-	}, nil
-}
-
-// DecryptCFB AES-CFB 解密
-func DecryptCFB(key, iv, data []byte) ([]byte, error) {
-	block, err := aes.NewCipher(key)
-	if err != nil {
-		return nil, err
-	}
-	if len(iv) != block.BlockSize() {
-		return nil, errors.New("IV length must equal block size")
-	}
-
-	out := make([]byte, len(data))
-	stream := cipher.NewCFBDecrypter(block, iv)
-	stream.XORKeyStream(out, data)
-	return out, nil
-}
-
-// ------------------------------------ AES-OFB ------------------------------------
-
-// EncryptOFB AES-OFB 加密
-func EncryptOFB(key, iv, data []byte) (*CipherText, error) {
-	block, err := aes.NewCipher(key)
-	if err != nil {
-		return nil, err
-	}
-	if len(iv) != block.BlockSize() {
-		return nil, errors.New("IV length must equal block size")
-	}
-
-	out := make([]byte, len(data))
-	stream := cipher.NewOFB(block, iv)
-	stream.XORKeyStream(out, data)
-	return &CipherText{
-		bytes: out,
-	}, nil
-}
-
-// DecryptOFB AES-OFB 解密
-func DecryptOFB(key, iv, data []byte) ([]byte, error) {
-	block, err := aes.NewCipher(key)
-	if err != nil {
-		return nil, err
-	}
-	if len(iv) != block.BlockSize() {
-		return nil, errors.New("IV length must equal block size")
-	}
-
-	out := make([]byte, len(data))
-	stream := cipher.NewOFB(block, iv)
-	stream.XORKeyStream(out, data)
-	return out, nil
+	return pkcs7_unpadding(out, blockSize)
 }
 
 // ------------------------------------ AES-CTR ------------------------------------

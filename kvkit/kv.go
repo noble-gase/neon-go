@@ -56,7 +56,7 @@ func (kv KV) Encode(sym, sep string, opts ...Option) string {
 	var buf strings.Builder
 	for _, k := range keys {
 		val := kv[k]
-		if len(val) == 0 && o.emptyMode == EmptyIgnore {
+		if len(val) == 0 && o.emptyMode == Ignore {
 			continue
 		}
 
@@ -78,7 +78,7 @@ func (kv KV) Encode(sym, sep string, opts ...Option) string {
 			continue
 		}
 		// 保留符号
-		if o.emptyMode != EmptyOnlyKey {
+		if o.emptyMode != OnlyKey {
 			buf.WriteString(sym)
 		}
 	}

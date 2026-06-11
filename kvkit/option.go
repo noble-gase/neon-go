@@ -4,9 +4,9 @@ package kvkit
 type EmptyMode int
 
 const (
-	EmptyDefault EmptyMode = iota // 默认：bar=baz&foo=
-	EmptyIgnore                   // 忽略：bar=baz
-	EmptyOnlyKey                  // 仅保留Key：bar=baz&foo
+	Default EmptyMode = iota // 默认：bar=baz&foo=
+	Ignore                   // 忽略：bar=baz
+	OnlyKey                  // 仅保留Key：bar=baz&foo
 )
 
 type options struct {

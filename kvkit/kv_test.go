@@ -20,11 +20,11 @@ func TestKV(t *testing.T) {
 	kv2.Set("foo", "")
 
 	assert.Equal(t, "bar=baz&foo=&hello=world", kv2.Encode("=", "&"))
-	assert.Equal(t, "bar=baz&foo=&hello=world", kv2.Encode("=", "&", WithEmptyMode(EmptyDefault)))
-	assert.Equal(t, "bar=baz&foo&hello=world", kv2.Encode("=", "&", WithEmptyMode(EmptyOnlyKey)))
-	assert.Equal(t, "bar=baz&hello=world", kv2.Encode("=", "&", WithEmptyMode(EmptyIgnore)))
+	assert.Equal(t, "bar=baz&foo=&hello=world", kv2.Encode("=", "&", WithEmptyMode(Default)))
+	assert.Equal(t, "bar=baz&foo&hello=world", kv2.Encode("=", "&", WithEmptyMode(OnlyKey)))
+	assert.Equal(t, "bar=baz&hello=world", kv2.Encode("=", "&", WithEmptyMode(Ignore)))
 	assert.Equal(t, "bar=baz&foo=", kv2.Encode("=", "&", WithIgnoreKeys("hello")))
-	assert.Equal(t, "bar=baz", kv2.Encode("=", "&", WithIgnoreKeys("hello"), WithEmptyMode(EmptyIgnore)))
+	assert.Equal(t, "bar=baz", kv2.Encode("=", "&", WithIgnoreKeys("hello"), WithEmptyMode(Ignore)))
 }
 
 func TestURLEncode(t *testing.T) {

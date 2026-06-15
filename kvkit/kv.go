@@ -6,6 +6,15 @@ import (
 	"strings"
 )
 
+// EmptyMode 值为空时的Encode模式
+type EmptyMode int
+
+const (
+	Default EmptyMode = iota // 默认：bar=baz&foo=
+	Ignore                   // 忽略：bar=baz
+	OnlyKey                  // 仅保留Key：bar=baz&foo
+)
+
 // KV 用于处理 k/v 需要格式化的场景，如：签名
 type KV map[string]string
 
@@ -33,21 +42,19 @@ func (kv KV) Has(key string) bool {
 // Encode 通过自定义的符号和分隔符按照key的ASCII码升序格式化为字符串。
 // 例如：("=", "&") ---> bar=baz&foo=quux；
 // 例如：(":", "#") ---> bar:baz#foo:quux；
-func (kv KV) Encode(sym, sep string, opts ...Option) string {
+func (kv KV) Encode(sym, sep string, emptyMode EmptyMode, ignoreKeys ...string) string {
 	if len(kv) == 0 {
 		return ""
 	}
 
-	o := &options{
-		ignoreKeys: make(map[string]struct{}),
-	}
-	for _, f := range opts {
-		f(o)
+	ignoreKeyMap := make(map[string]struct{}, len(ignoreKeys))
+	for _, k := range ignoreKeys {
+		ignoreKeyMap[k] = struct{}{}
 	}
 
 	keys := make([]string, 0, len(kv))
 	for k := range kv {
-		if _, ok := o.ignoreKeys[k]; !ok {
+		if _, ok := ignoreKeyMap[k]; !ok {
 			keys = append(keys, k)
 		}
 	}
@@ -56,29 +63,72 @@ func (kv KV) Encode(sym, sep string, opts ...Option) string {
 	var buf strings.Builder
 	for _, k := range keys {
 		val := kv[k]
-		if len(val) == 0 && o.emptyMode == Ignore {
+		if len(val) == 0 && emptyMode == Ignore {
 			continue
 		}
 
 		if buf.Len() > 0 {
 			buf.WriteString(sep)
 		}
-		if o.escape {
-			buf.WriteString(url.QueryEscape(k))
-		} else {
-			buf.WriteString(k)
-		}
+
+		buf.WriteString(k)
+
 		if len(val) != 0 {
 			buf.WriteString(sym)
-			if o.escape {
-				buf.WriteString(url.QueryEscape(val))
-			} else {
-				buf.WriteString(val)
-			}
+			buf.WriteString(val)
 			continue
 		}
+
 		// 保留符号
-		if o.emptyMode != OnlyKey {
+		if emptyMode != OnlyKey {
+			buf.WriteString(sym)
+		}
+	}
+	return buf.String()
+}
+
+// EncodeEscape 通过自定义的符号和分隔符按照key的ASCII码升序格式化为字符串。
+// 例如：("=", "&") ---> bar=baz&foo=quux；
+// 例如：(":", "#") ---> bar:baz#foo:quux；
+func (kv KV) EncodeEscape(sym, sep string, emptyMode EmptyMode, ignoreKeys ...string) string {
+	if len(kv) == 0 {
+		return ""
+	}
+
+	ignoreKeyMap := make(map[string]struct{}, len(ignoreKeys))
+	for _, k := range ignoreKeys {
+		ignoreKeyMap[k] = struct{}{}
+	}
+
+	keys := make([]string, 0, len(kv))
+	for k := range kv {
+		if _, ok := ignoreKeyMap[k]; !ok {
+			keys = append(keys, k)
+		}
+	}
+	sort.Strings(keys)
+
+	var buf strings.Builder
+	for _, k := range keys {
+		val := kv[k]
+		if len(val) == 0 && emptyMode == Ignore {
+			continue
+		}
+
+		if buf.Len() > 0 {
+			buf.WriteString(sep)
+		}
+
+		buf.WriteString(url.QueryEscape(k))
+
+		if len(val) != 0 {
+			buf.WriteString(sym)
+			buf.WriteString(url.QueryEscape(val))
+			continue
+		}
+
+		// 保留符号
+		if emptyMode != OnlyKey {
 			buf.WriteString(sym)
 		}
 	}

@@ -3,10 +3,16 @@ package httpzip
 import (
 	"context"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"net/http"
+	"path/filepath"
 	"strings"
 )
+
+// ErrInsecurePath 表示 ZIP 内存在不安全的文件路径（如绝对路径、包含 ".." 或反斜杠）。
+// 此时 Reader 仍会返回（非 nil），调用方若确认来源可信，可忽略该错误继续使用。
+var ErrInsecurePath = errors.New("httpzip: insecure file path in zip")
 
 // Reader 远程 ZIP Reader
 type Reader struct {
@@ -71,6 +77,10 @@ func NewReader(ctx context.Context, url string) (*Reader, error) {
 		return nil, fmt.Errorf("EOCD not found")
 	}
 	eocd := tail[idx:]
+	// EOCD 固定部分至少22字节
+	if len(eocd) < 22 {
+		return nil, fmt.Errorf("truncated EOCD")
+	}
 
 	// 从 EOCD 里解析 Central Directory 的大小和偏移量
 	cdSize := uint64(binary.LittleEndian.Uint32(eocd[12:]))
@@ -86,14 +96,24 @@ func NewReader(ctx context.Context, url string) (*Reader, error) {
 			return nil, fmt.Errorf("ZIP64 locator not found")
 		}
 		loc := tail[locIdx:]
+		// ZIP64 EOCD Locator 固定20字节
+		if len(loc) < 20 {
+			return nil, fmt.Errorf("truncated ZIP64 locator")
+		}
 
 		// 读取 ZIP64 EOCD 偏移量（存放在 Locator 中）
 		zip64EOCDOffset := binary.LittleEndian.Uint64(loc[8:])
+		if zip64EOCDOffset > uint64(r.Size) {
+			return nil, fmt.Errorf("invalid ZIP64 EOCD offset")
+		}
 
 		// 加载 ZIP64 EOCD 结构
-		zip64EOCD, _err := r.httpRange(int64(zip64EOCDOffset), int64(zip64EOCDOffset)+56)
+		zip64EOCD, _err := r.httpRange(int64(zip64EOCDOffset), int64(zip64EOCDOffset)+55)
 		if _err != nil {
 			return nil, _err
+		}
+		if len(zip64EOCD) < 56 {
+			return nil, fmt.Errorf("truncated ZIP64 EOCD")
 		}
 		if binary.LittleEndian.Uint32(zip64EOCD) != 0x06064b50 {
 			return nil, fmt.Errorf("invalid ZIP64 EOCD signature")
@@ -102,6 +122,14 @@ func NewReader(ctx context.Context, url string) (*Reader, error) {
 		// 从 ZIP64 EOCD 中解析 cdSize 和 cdOffset
 		cdSize = binary.LittleEndian.Uint64(zip64EOCD[40:])
 		cdOffset = binary.LittleEndian.Uint64(zip64EOCD[48:])
+	}
+
+	// 校验 Central Directory 边界，防止恶意声明导致越界
+	if cdSize == 0 {
+		return nil, fmt.Errorf("invalid central directory size: %d", cdSize)
+	}
+	if cdOffset > uint64(r.Size) || cdSize > uint64(r.Size)-cdOffset {
+		return nil, fmt.Errorf("central directory out of bounds")
 	}
 
 	// Step 4: 加载 Central Directory 数据 (包含每个文件的元信息：名字、大小、压缩方式、偏移量)
@@ -114,6 +142,17 @@ func NewReader(ctx context.Context, url string) (*Reader, error) {
 	if err := r.parseCentralDirectory(cdData); err != nil {
 		return nil, err
 	}
+
+	// Step 6: 路径穿越防护（同 archive/zip：发现不安全路径时返回 Reader 和 ErrInsecurePath）
+	for _, f := range r.File {
+		if f.Name == "" {
+			continue
+		}
+		// ZIP 规范要求使用正斜杠，包含反斜杠视为不安全
+		if !filepath.IsLocal(f.Name) || strings.Contains(f.Name, `\`) {
+			return r, ErrInsecurePath
+		}
+	}
 	return r, nil
 }
 
@@ -125,6 +164,9 @@ func (r *Reader) contentLength() error {
 
 	if resp.StatusCode() != http.StatusOK {
 		return fmt.Errorf("bad status: %s", resp.Status())
+	}
+	if resp.RawResponse.ContentLength <= 0 {
+		return fmt.Errorf("unknown content length: %d", resp.RawResponse.ContentLength)
 	}
 	r.Size = resp.RawResponse.ContentLength
 
@@ -156,10 +198,14 @@ func (r *Reader) httpRangeRaw(start, end int64) (*http.Response, error) {
 
 func (r *Reader) parseCentralDirectory(data []byte) error {
 	i := 0
-	for i < len(data) {
+	for i+4 <= len(data) {
 		// 每个 Central Directory File Header 都以固定的签名开头 0x02014b50
 		if binary.LittleEndian.Uint32(data[i:]) != 0x02014b50 {
 			break
+		}
+		// Central Directory File Header 固定部分46字节
+		if i+46 > len(data) {
+			return fmt.Errorf("truncated central directory header")
 		}
 
 		// 压缩方式 (2 bytes)
@@ -172,22 +218,28 @@ func (r *Reader) parseCentralDirectory(data []byte) error {
 		uncompSize := uint64(binary.LittleEndian.Uint32(data[i+24:]))
 
 		// 文件名长度
-		nameLen := binary.LittleEndian.Uint16(data[i+28:])
+		nameLen := int(binary.LittleEndian.Uint16(data[i+28:]))
 
 		// Extra field 长度
-		extraLen := binary.LittleEndian.Uint16(data[i+30:])
+		extraLen := int(binary.LittleEndian.Uint16(data[i+30:]))
 
 		// 文件注释长度
-		commentLen := binary.LittleEndian.Uint16(data[i+32:])
+		commentLen := int(binary.LittleEndian.Uint16(data[i+32:]))
 
 		// 对应 Local File Header 的偏移量 (4 bytes，可能需要 ZIP64)
 		localHeaderOffset := uint64(binary.LittleEndian.Uint32(data[i+42:]))
 
+		// 校验变长部分边界，防止越界
+		end := i + 46 + nameLen + extraLen + commentLen
+		if end > len(data) {
+			return fmt.Errorf("truncated central directory entry")
+		}
+
 		// 文件名
-		name := string(data[i+46 : i+46+int(nameLen)])
+		name := string(data[i+46 : i+46+nameLen])
 
 		// Extra field 数据
-		extra := data[i+46+int(nameLen) : i+46+int(nameLen)+int(extraLen)]
+		extra := data[i+46+nameLen : i+46+nameLen+extraLen]
 
 		// 如果大小或偏移量是 0xFFFFFFFF，说明需要用 ZIP64 extra field 来获取真实值
 		if compSize == 0xFFFFFFFF || uncompSize == 0xFFFFFFFF || localHeaderOffset == 0xFFFFFFFF {
@@ -197,29 +249,42 @@ func (r *Reader) parseCentralDirectory(data []byte) error {
 				headerID := binary.LittleEndian.Uint16(extra[j:])
 				dataSize := int(binary.LittleEndian.Uint16(extra[j+2:]))
 
+				fieldEnd := j + 4 + dataSize
+				if fieldEnd > len(extra) {
+					return fmt.Errorf("invalid extra field (name=%s)", name)
+				}
+
 				// 0x0001 表示 ZIP64 extended information extra field
 				if headerID == 0x0001 {
 					k := j + 4
 
 					// 按顺序存放未压缩大小、压缩大小、local header 偏移量
 					if uncompSize == 0xFFFFFFFF {
+						if k+8 > fieldEnd {
+							return fmt.Errorf("invalid ZIP64 extra field (name=%s)", name)
+						}
 						uncompSize = binary.LittleEndian.Uint64(extra[k:])
 						k += 8
 					}
 					if compSize == 0xFFFFFFFF {
+						if k+8 > fieldEnd {
+							return fmt.Errorf("invalid ZIP64 extra field (name=%s)", name)
+						}
 						compSize = binary.LittleEndian.Uint64(extra[k:])
 						k += 8
 					}
 					if localHeaderOffset == 0xFFFFFFFF {
+						if k+8 > fieldEnd {
+							return fmt.Errorf("invalid ZIP64 extra field (name=%s)", name)
+						}
 						localHeaderOffset = binary.LittleEndian.Uint64(extra[k:])
-						k += 8
 					}
 				}
-				j += 4 + dataSize // 移动到下一个 extra field
+				j = fieldEnd // 移动到下一个 extra field
 			}
 		}
 
-		i += 46 + int(nameLen) + int(extraLen) + int(commentLen)
+		i = end
 
 		r.File = append(r.File, &File{
 			Name:             name,

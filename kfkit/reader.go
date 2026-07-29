@@ -39,15 +39,15 @@ func (r *Reader) Handle(handle func(msg kafka.Message) error) {
 
 			start := time.Now()
 
-			metricDelay.WithLabelValues(msg.Topic).Observe(float64(time.Since(msg.Time).Milliseconds()))
+			metricSubDelay.WithLabelValues(msg.Topic).Observe(float64(time.Since(msg.Time).Milliseconds()))
 
 			result := "success"
 			if err = handle(msg); err != nil {
 				result = "fail"
 			}
-			metricResult.WithLabelValues(msg.Topic, sub, result).Inc()
+			metricResult.WithLabelValues(msg.Topic, "sub", result).Inc()
 
-			metricReqDuration.WithLabelValues(msg.Topic, sub).Observe(float64(time.Since(start).Milliseconds()))
+			metricReqDuration.WithLabelValues(msg.Topic, "sub").Observe(float64(time.Since(start).Milliseconds()))
 		}
 	}
 }

@@ -40,8 +40,8 @@ func (p *Producer) Send(ctx context.Context, topic string, key string, payload [
 	if err != nil {
 		result = "fail"
 	}
-	metricResult.WithLabelValues(topic, pub, result).Inc()
-	metricReqDuration.WithLabelValues(topic, pub).Observe(float64(time.Since(start).Milliseconds()))
+	metricResult.WithLabelValues(topic, "pub", result).Inc()
+	metricReqDuration.WithLabelValues(topic, "pub").Observe(float64(time.Since(start).Milliseconds()))
 
 	return
 }
@@ -54,7 +54,7 @@ func DefaultWriterConfig(brokers []string) *kafka.Writer {
 	return &kafka.Writer{
 		Addr:         kafka.TCP(brokers...),
 		BatchSize:    1000,
-		BatchBytes:   5242880,
+		BatchBytes:   5 * 1024 * 1024,
 		BatchTimeout: 20 * time.Millisecond,
 		Async:        true,
 	}

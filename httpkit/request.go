@@ -37,6 +37,7 @@ func (r *ApiResult[T]) Error(ok int) error {
 
 func HttpGet(ctx context.Context, url string, query url.Values, header ...http.Header) (resp *resty.Response, err error) {
 	start := time.Now()
+
 	defer func() {
 		cost := time.Since(start)
 
@@ -75,6 +76,7 @@ func HttpGetX[T any](ctx context.Context, url string, query url.Values, header .
 	var resp *resty.Response
 
 	start := time.Now()
+
 	defer func() {
 		cost := time.Since(start)
 
@@ -117,6 +119,7 @@ func HttpGetX[T any](ctx context.Context, url string, query url.Values, header .
 
 func HttpPost(ctx context.Context, url string, body any, header ...http.Header) (resp *resty.Response, err error) {
 	start := time.Now()
+
 	defer func() {
 		cost := time.Since(start)
 
@@ -155,6 +158,7 @@ func HttpPostX[T any](ctx context.Context, url string, body any, header ...http.
 	var resp *resty.Response
 
 	start := time.Now()
+
 	defer func() {
 		cost := time.Since(start)
 
@@ -197,6 +201,7 @@ func HttpPostX[T any](ctx context.Context, url string, body any, header ...http.
 
 func HttpForm(ctx context.Context, url string, form url.Values, header ...http.Header) (resp *resty.Response, err error) {
 	start := time.Now()
+
 	defer func() {
 		cost := time.Since(start)
 
@@ -235,6 +240,7 @@ func HttpFormX[T any](ctx context.Context, url string, form url.Values, header .
 	var resp *resty.Response
 
 	start := time.Now()
+
 	defer func() {
 		cost := time.Since(start)
 

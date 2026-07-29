@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 
 	"github.com/redis/go-redis/v9"
 )
@@ -24,7 +25,7 @@ func MGetMap[T any](ctx context.Context, uc redis.UniversalClient, keys []string
 			if s, ok := v.(string); ok && len(s) != 0 {
 				var val T
 				if err = json.Unmarshal([]byte(s), &val); err != nil {
-					return nil, err
+					return nil, fmt.Errorf("unmarshal(%s): %w", s, err)
 				}
 				ret[k] = val
 			}

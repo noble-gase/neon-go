@@ -5,23 +5,9 @@ import (
 	"crypto/tls"
 	"time"
 
-	"github.com/noble-gase/neon/helper"
 	"github.com/redis/go-redis/v9"
 	"github.com/redis/go-redis/v9/maintnotifications"
-	"golang.org/x/sync/singleflight"
 )
-
-var sf singleflight.Group
-
-// Discard 丢弃数据，不缓存
-const Discard = helper.NilError("redkit: discarded")
-
-var script = redis.NewScript(`
-redis.call('HSET', KEYS[1], ARGV[1], ARGV[2])
-if redis.call('TTL', KEYS[1]) == -1 then
-    redis.call('EXPIRE', KEYS[1], ARGV[3])
-end
-`)
 
 type Config struct {
 	// Addrs 地址

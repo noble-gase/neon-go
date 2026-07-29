@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 
 	"github.com/redis/go-redis/v9"
 )
@@ -18,7 +19,7 @@ func HGetAll[T any](ctx context.Context, uc redis.UniversalClient, key string) (
 	for k, v := range data {
 		var val T
 		if err = json.Unmarshal([]byte(v), &val); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("unmarshal(%s): %w", v, err)
 		}
 		ret[k] = val
 	}
@@ -41,7 +42,7 @@ func HMGetMap[T any](ctx context.Context, uc redis.UniversalClient, key string, 
 			if s, ok := v.(string); ok && len(s) != 0 {
 				var val T
 				if err = json.Unmarshal([]byte(s), &val); err != nil {
-					return nil, err
+					return nil, fmt.Errorf("unmarshal(%s): %w", s, err)
 				}
 				ret[k] = val
 			}

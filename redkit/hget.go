@@ -27,7 +27,7 @@ func HGet[T any](ctx context.Context, uc redis.UniversalClient, key, field strin
 
 	// 缓存未命中
 	sfKey := key + ":" + field
-	data, err, _ := sf.Do(sfKey, func() (any, error) {
+	return doSF[T](ctx, sfKey, func() (any, error) {
 		// 调用fn获取数据
 		data, _err := fn(ctx)
 		if _err != nil {
@@ -41,7 +41,7 @@ func HGet[T any](ctx context.Context, uc redis.UniversalClient, key, field strin
 		// 缓存数据
 		b, _err := json.Marshal(data)
 		if _err != nil {
-			return nil, _err
+			return nil, fmt.Errorf("marshal(%+v): %w", data, _err)
 		}
 
 		if ttl > 0 {
@@ -59,8 +59,4 @@ func HGet[T any](ctx context.Context, uc redis.UniversalClient, key, field strin
 
 		return data, nil
 	})
-	if err != nil {
-		return ret, err
-	}
-	return data.(T), nil
 }

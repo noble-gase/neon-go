@@ -46,9 +46,9 @@ func Close() {
 
 	for _, v := range list {
 		if err := v.closeFunc(); err != nil {
-			slog.Error("failed to close resource", "name", v.name, "error", err)
+			slog.Error("failed to close "+v.name, "error", err)
 		} else {
-			slog.Info("resource closed", "name", v.name)
+			slog.Info(v.name + " closed")
 		}
 	}
 }

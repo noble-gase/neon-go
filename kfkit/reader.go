@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/noble-gase/neon/closekit"
 	"github.com/segmentio/kafka-go"
 )
 
@@ -73,10 +74,14 @@ func DefaultReaderConfig(brokers []string, groupId, topic string) kafka.ReaderCo
 func NewReader(config kafka.ReaderConfig) *Reader {
 	ctx, cancel := context.WithCancel(context.Background())
 
-	return &Reader{
+	r := &Reader{
 		reader: kafka.NewReader(config),
 
 		ctx:    ctx,
 		cancel: cancel,
 	}
+	closekit.Add("kafka-reader:"+config.Topic, closekit.P7, func() error {
+		return r.Close()
+	})
+	return r
 }

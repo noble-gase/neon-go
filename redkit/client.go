@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"time"
 
+	"github.com/noble-gase/neon/closekit"
 	"github.com/redis/go-redis/v9"
 	"github.com/redis/go-redis/v9/maintnotifications"
 )
@@ -47,7 +48,7 @@ type Options struct {
 	InsecureSkipVerify bool `json:"insecure_skip_verify" mapstructure:"insecure_skip_verify"`
 }
 
-func NewClient(cfg *Config) (redis.UniversalClient, error) {
+func NewClient(name string, cfg *Config) (redis.UniversalClient, error) {
 	opts := &redis.UniversalOptions{
 		Addrs:           cfg.Addrs,
 		DB:              cfg.Options.DB,
@@ -82,5 +83,9 @@ func NewClient(cfg *Config) (redis.UniversalClient, error) {
 		_ = client.Close()
 		return nil, err
 	}
+
+	closekit.Add("redis-client:"+name, closekit.P9, func() error {
+		return client.Close()
+	})
 	return client, nil
 }

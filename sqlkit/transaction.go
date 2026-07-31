@@ -35,7 +35,7 @@ func Transaction(ctx context.Context, db *sql.DB, fn func(ctx context.Context, t
 	defer func() {
 		if r := recover(); r != nil {
 			// if panic, should rollback
-			e := fmt.Errorf("transaction panic recovered: %+v", r)
+			e := fmt.Errorf("transaction panic: %+v", r)
 			err = fmt.Errorf("%w\n%s", rollback(e), string(debug.Stack()))
 		}
 	}()
@@ -89,7 +89,7 @@ func TransactionX(ctx context.Context, db DB, fn func(ctx context.Context, tx TX
 	defer func() {
 		if r := recover(); r != nil {
 			// if panic, should rollback
-			e := fmt.Errorf("transaction panic recovered: %+v", r)
+			e := fmt.Errorf("transaction panic: %+v", r)
 			err = fmt.Errorf("%w\n%s", rollback(e), string(debug.Stack()))
 		}
 	}()

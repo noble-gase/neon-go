@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/noble-gase/neon/closekit"
 	"github.com/segmentio/kafka-go"
 )
 
@@ -60,8 +61,12 @@ func DefaultWriterConfig(brokers []string) *kafka.Writer {
 	}
 }
 
-func NewProducer(w *kafka.Writer) *Producer {
-	return &Producer{
+func NewProducer(name string, w *kafka.Writer) *Producer {
+	p := &Producer{
 		writer: w,
 	}
+	closekit.Add("kafka-writer:"+name, closekit.P7, func() error {
+		return p.Close()
+	})
+	return p
 }

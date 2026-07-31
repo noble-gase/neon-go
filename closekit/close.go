@@ -1,16 +1,15 @@
 package closekit
 
 import (
-	"fmt"
 	"log/slog"
 	"sort"
 	"sync"
 )
 
 type closer struct {
-	id string
-	px Priority
-	fn func() error
+	name      string
+	priority  Priority
+	closeFunc func() error
 }
 
 var (
@@ -21,14 +20,14 @@ var (
 // Add 将资源关闭操作添加到关闭队列中
 //
 //	按 [P0 - P100] 顺序关闭（相同优先级按添加顺序关闭）
-func Add(id string, px Priority, fn func() error) {
+func Add(name string, priority Priority, closeFunc func() error) {
 	mutex.Lock()
 	defer mutex.Unlock()
 
 	closers = append(closers, closer{
-		id: id,
-		px: px,
-		fn: fn,
+		name:      name,
+		priority:  priority,
+		closeFunc: closeFunc,
 	})
 }
 
@@ -42,13 +41,14 @@ func Close() {
 	mutex.Unlock()
 
 	sort.SliceStable(list, func(i, j int) bool {
-		return list[i].px < list[j].px
+		return list[i].priority < list[j].priority
 	})
 
 	for _, v := range list {
-		fmt.Println("⌛️", "close", v.id, "...")
-		if err := v.fn(); err != nil {
-			slog.Error("close "+v.id+" failed", "error", err)
+		if err := v.closeFunc(); err != nil {
+			slog.Error("failed to close resource", "name", v.name, "error", err)
+		} else {
+			slog.Info("resource closed", "name", v.name)
 		}
 	}
 }

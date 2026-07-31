@@ -7,6 +7,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/noble-gase/neon/closekit"
 	"github.com/noble-gase/neon/sqlkit/internal"
 )
 
@@ -39,7 +40,7 @@ type Options struct {
 }
 
 // NewDB returns a new sql.DB
-func NewDB(cfg *Config) (*sql.DB, error) {
+func NewDB(name string, cfg *Config) (*sql.DB, error) {
 	db, err := sql.Open(cfg.Driver, cfg.DSN)
 	if err != nil {
 		return nil, err
@@ -54,6 +55,9 @@ func NewDB(cfg *Config) (*sql.DB, error) {
 	db.SetConnMaxIdleTime(time.Duration(cfg.Options.ConnMaxIdleTime) * time.Second)
 	db.SetConnMaxLifetime(time.Duration(cfg.Options.ConnMaxLifetime) * time.Second)
 
+	closekit.Add("db:"+name, closekit.P10, func() error {
+		return db.Close()
+	})
 	return db, nil
 }
 

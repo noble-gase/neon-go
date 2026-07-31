@@ -14,6 +14,7 @@ go get -u github.com/noble-gase/neon
 | -------- | -------------------------------------------------------------------------------------------- |
 | aeskit   | 封装 `AES` 相关操作                                                                          |
 | array    | 切片常用操作                                                                                 |
+| closekit | 按优先级管理并关闭资源                                                                       |
 | conv     | 类型转换                                                                                     |
 | coord    | 距离、方位角、经纬度与平面直角坐标系的相互转化                                               |
 | httpzip  | 远程获取 `ZIP` 压缩包中的文件内容                                                            |
@@ -27,6 +28,7 @@ go get -u github.com/noble-gase/neon
 | rsakit   | 封装 `RSA` 相关操作                                                                          |
 | sqlkit   | 包含DB初始化和事务等封装 和 基于 [`Jet`](https://github.com/go-jet/jet) 的 curd 封装         |
 | stepkit  | 分批次处理切片                                                                               |
+| kfkit    | 封装 `kafka` 生产者 和 消费者                                                                |
 | kvkit    | 用于处理 `k-v` 格式化的场景，如：生成签名串等                                                |
 | validkit | 验证器（基于 [`validator`](https://github.com/go-playground/validator)）支持汉化和自定义规则 |
 

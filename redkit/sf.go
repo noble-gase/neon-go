@@ -1,7 +1,6 @@
 package redkit
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/noble-gase/neon/helper"
@@ -21,21 +20,17 @@ if redis.call('TTL', KEYS[1]) == -1 then
 end
 `)
 
-func doSF[T any](ctx context.Context, key string, fn func() (any, error)) (T, error) {
+func doSF[T any](key string, fn func() (any, error)) (T, error) {
 	var ret T
 
-	select {
-	case <-ctx.Done():
-		return ret, ctx.Err()
-	case result := <-sf.DoChan(key, fn):
-		if result.Err != nil {
-			return ret, result.Err
-		}
-
-		data, ok := result.Val.(T)
-		if !ok {
-			return ret, fmt.Errorf("redkit: unexpected result type %T", result.Val)
-		}
-		return data, nil
+	value, err, _ := sf.Do(key, fn)
+	if err != nil {
+		return ret, err
 	}
+
+	data, ok := value.(T)
+	if !ok {
+		return ret, fmt.Errorf("redkit: unexpected result type %T", value)
+	}
+	return data, nil
 }

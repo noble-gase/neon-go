@@ -1,39 +1,55 @@
 package redkit
 
 import (
-	"context"
 	"errors"
+	"strings"
 	"testing"
 )
 
-func TestDoSFContextCanceled(t *testing.T) {
-	started := make(chan struct{})
-	release := make(chan struct{})
-	done := make(chan struct{})
+func TestDoSF(t *testing.T) {
+	wantErr := errors.New("load failed")
 
-	go func() {
-		defer close(done)
-		_, _ = doSF[string](context.Background(), "context-canceled", func() (any, error) {
-			close(started)
-			<-release
-			return "value", nil
+	tests := []struct {
+		name    string
+		key     string
+		fn      func() (any, error)
+		want    string
+		wantErr error
+	}{
+		{
+			name: "success",
+			key:  "success",
+			fn: func() (any, error) {
+				return "value", nil
+			},
+			want: "value",
+		},
+		{
+			name: "error",
+			key:  "error",
+			fn: func() (any, error) {
+				return nil, wantErr
+			},
+			wantErr: wantErr,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			value, err := doSF[string](test.key, test.fn)
+			if !errors.Is(err, test.wantErr) {
+				t.Fatalf("error = %v, want %v", err, test.wantErr)
+			}
+			if value != test.want {
+				t.Fatalf("value = %q, want %q", value, test.want)
+			}
 		})
-	}()
-	<-started
+	}
 
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
-	value, err := doSF[string](ctx, "context-canceled", func() (any, error) {
-		t.Fatal("shared function should not run twice")
-		return "", nil
+	_, err := doSF[string]("unexpected-type", func() (any, error) {
+		return 1, nil
 	})
-	if !errors.Is(err, context.Canceled) {
-		t.Fatalf("expected context.Canceled, got %v", err)
+	if err == nil || !strings.Contains(err.Error(), "unexpected result type int") {
+		t.Fatalf("unexpected type error = %v", err)
 	}
-	if value != "" {
-		t.Fatalf("expected zero value, got %q", value)
-	}
-
-	close(release)
-	<-done
 }

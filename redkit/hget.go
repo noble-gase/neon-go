@@ -11,7 +11,9 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-func HGet[T any](ctx context.Context, uc redis.UniversalClient, key, field string, fn func(ctx context.Context) (T, error), ttl time.Duration) (T, error) {
+// HGet 读取 Hash 字段缓存，未命中时通过 loader 回源并写入缓存。
+// 回源使用 singleflight 去重，调用方需保证 key:field 全局唯一（跨客户端、跨操作、跨类型），否则可能共享到非预期结果
+func HGet[T any](ctx context.Context, uc redis.UniversalClient, key, field string, loader func(ctx context.Context) (T, error), ttl time.Duration) (T, error) {
 	var ret T
 
 	str, err := uc.HGet(ctx, key, field).Result()
@@ -27,14 +29,13 @@ func HGet[T any](ctx context.Context, uc redis.UniversalClient, key, field strin
 
 	// 缓存未命中
 	sfKey := key + ":" + field
-	return doSF[T](ctx, sfKey, func() (any, error) {
-		// 调用fn获取数据
-		data, _err := fn(ctx)
+	return doSF[T](sfKey, func() (any, error) {
+		// 调用 loader 回源数据
+		data, _err := loader(ctx)
 		if _err != nil {
 			if errors.Is(_err, Discard) {
 				return data, nil
 			}
-			sf.Forget(sfKey)
 			return nil, _err
 		}
 

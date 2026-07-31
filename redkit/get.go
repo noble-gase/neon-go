@@ -11,7 +11,9 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-func Get[T any](ctx context.Context, uc redis.UniversalClient, key string, fn func(ctx context.Context) (T, error), ttl time.Duration) (T, error) {
+// Get 读取缓存，未命中时通过 loader 回源并写入缓存。
+// 回源使用 singleflight 去重，调用方需保证 key 全局唯一（跨客户端、跨操作、跨类型），否则可能共享到非预期结果
+func Get[T any](ctx context.Context, uc redis.UniversalClient, key string, loader func(ctx context.Context) (T, error), ttl time.Duration) (T, error) {
 	var ret T
 
 	str, err := uc.Get(ctx, key).Result()
@@ -26,9 +28,9 @@ func Get[T any](ctx context.Context, uc redis.UniversalClient, key string, fn fu
 	}
 
 	// 缓存未命中
-	return doSF[T](ctx, key, func() (any, error) {
-		// 调用fn获取数据
-		data, _err := fn(ctx)
+	return doSF[T](key, func() (any, error) {
+		// 调用 loader 回源数据
+		data, _err := loader(ctx)
 		if _err != nil {
 			if errors.Is(_err, Discard) {
 				return data, nil

@@ -6,7 +6,7 @@ import (
 	"io"
 	"path/filepath"
 
-	"github.com/disintegration/imaging"
+	"github.com/kovidgoyal/imaging"
 )
 
 // Crop 图片裁切

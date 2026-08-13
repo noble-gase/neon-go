@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 
 	"git.sr.ht/~sbinet/gg"
-	"github.com/disintegration/imaging"
+	"github.com/kovidgoyal/imaging"
 )
 
 // Label 图片标注

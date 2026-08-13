@@ -5,7 +5,7 @@ import (
 	"io"
 	"path/filepath"
 
-	"github.com/disintegration/imaging"
+	"github.com/kovidgoyal/imaging"
 )
 
 const ThumbnailWidth = 200

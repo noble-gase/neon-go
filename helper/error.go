@@ -34,19 +34,14 @@ func Error(ctx context.Context, err error, attrs ...slog.Attr) error {
 		name = parts[len(parts)-1]
 	}
 
-	caller := slog.Attr{
-		Key: "caller",
-		Value: slog.GroupValue(
-			slog.String("func", name),
-			slog.String("file", file),
-			slog.Int("line", line),
-		),
-	}
+	caller := slog.GroupAttrs(
+		"caller",
+		slog.String("func", name),
+		slog.String("file", file),
+		slog.Int("line", line),
+	)
 
-	slog.LogAttrs(ctx, slog.LevelError, err.Error(), slog.Attr{
-		Key:   "context",
-		Value: slog.GroupValue(attrs...),
-	}, caller)
+	slog.LogAttrs(ctx, slog.LevelError, err.Error(), slog.GroupAttrs("context", attrs...), caller)
 
 	return codekit.Err
 }

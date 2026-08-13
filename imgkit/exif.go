@@ -1,11 +1,15 @@
 package imgkit
 
 import (
+	"bytes"
+	"image"
+	_ "image/gif" // 注册GIF解码器，用于获取图片尺寸（imagemeta 不支持GIF）
+	"io"
 	"os"
 
-	"github.com/disintegration/imaging"
-	"github.com/rwcarlsen/goexif/exif"
+	"github.com/bep/imagemeta"
 	"github.com/shopspring/decimal"
+	_ "golang.org/x/image/bmp" // 注册BMP解码器，用于获取图片尺寸（imagemeta 不支持BMP）
 )
 
 // Rect 定义一个矩形框
@@ -81,44 +85,105 @@ func ParseEXIF(filename string) (*EXIF, error) {
 		Size: stat.Size(),
 	}
 
-	// 图片格式
-	format, _ := imaging.FormatFromFilename(filename)
-	if format < 0 {
+	// 图片格式（按魔数探测，与文件扩展名无关）
+	format, name := sniffFormat(f)
+	if len(name) == 0 {
 		return data, nil
 	}
-	data.Format = format.String()
+	data.Format = name
 
-	// 解析EXIF
-	if x, _ := exif.Decode(f); x != nil {
+	// 解析EXIF（尽力而为，解析失败时忽略错误）
+	if format != imagemeta.ImageFormatAuto {
+		var tags imagemeta.Tags
+		res, _ := imagemeta.Decode(imagemeta.Options{
+			R:           f,
+			ImageFormat: format,
+			Sources:     imagemeta.EXIF | imagemeta.CONFIG,
+			HandleTag: func(ti imagemeta.TagInfo) error {
+				tags.Add(ti)
+				return nil
+			},
+		})
+
+		// 实际宽高（来自文件头，无需解码像素）
+		data.Width = res.ImageConfig.Width
+		data.Height = res.ImageConfig.Height
+
+		exifTags := tags.EXIF()
 		// 经纬度
-		lat, lng, _ := x.LatLong()
+		lat, lng, _ := tags.GetLatLong()
 		data.Longitude = decimal.NewFromFloat(lng)
 		data.Latitude = decimal.NewFromFloat(lat)
-		// 宽
-		if tag, _ := x.Get(exif.PixelXDimension); tag != nil {
-			v, _ := tag.Int(0)
-			data.Width = v
-		}
-		// 高
-		if tag, _ := x.Get(exif.PixelYDimension); tag != nil {
-			v, _ := tag.Int(0)
-			data.Height = v
-		}
 		// 转向
-		if tag, _ := x.Get(exif.Orientation); tag != nil {
-			v, _ := tag.Int(0)
-			data.Orientation = Orientation(v).String()
+		if tag, ok := exifTags["Orientation"]; ok {
+			data.Orientation = Orientation(tagInt(tag.Value)).String()
+		}
+		// 宽高缺失时，使用EXIF记录值
+		if data.Width == 0 || data.Height == 0 {
+			if tag, ok := exifTags["ExifImageWidth"]; ok {
+				data.Width = tagInt(tag.Value)
+			}
+			if tag, ok := exifTags["ExifImageHeight"]; ok {
+				data.Height = tagInt(tag.Value)
+			}
 		}
 	}
 
-	// 如果宽度或高度为0，则从图片中获取
+	// 如果宽度或高度为0，则从图片头中获取
 	if data.Width == 0 || data.Height == 0 {
-		if img, _ := imaging.Open(filename); img != nil {
-			rect := img.Bounds()
-			data.Width = rect.Dx()
-			data.Height = rect.Dy()
+		if _, err := f.Seek(0, io.SeekStart); err == nil {
+			if cfg, _, err := image.DecodeConfig(f); err == nil {
+				data.Width = cfg.Width
+				data.Height = cfg.Height
+			}
 		}
 	}
 
 	return data, nil
+}
+
+// sniffFormat 通过文件魔数探测图片格式；
+// imagemeta 不支持的格式（如GIF、BMP）返回 ImageFormatAuto 和格式名称，无法识别的格式返回空名称。
+func sniffFormat(r io.ReaderAt) (imagemeta.ImageFormat, string) {
+	buf := make([]byte, 12)
+	if n, _ := r.ReadAt(buf, 0); n < 12 {
+		return imagemeta.ImageFormatAuto, ""
+	}
+
+	switch {
+	case bytes.HasPrefix(buf, []byte{0xFF, 0xD8, 0xFF}):
+		return imagemeta.JPEG, "JPEG"
+	case bytes.HasPrefix(buf, []byte("\x89PNG\r\n\x1a\n")):
+		return imagemeta.PNG, "PNG"
+	case bytes.HasPrefix(buf, []byte("II*\x00")), bytes.HasPrefix(buf, []byte("MM\x00*")):
+		return imagemeta.TIFF, "TIFF"
+	case bytes.HasPrefix(buf, []byte("RIFF")) && bytes.Equal(buf[8:12], []byte("WEBP")):
+		return imagemeta.WebP, "WEBP"
+	case bytes.Equal(buf[4:8], []byte("ftyp")):
+		// ISO-BMFF 容器，按 major brand 区分
+		switch string(buf[8:12]) {
+		case "avif", "avis":
+			return imagemeta.AVIF, "AVIF"
+		case "heic", "heix", "hevc", "hevx":
+			return imagemeta.HEIF, "HEIC"
+		case "heif", "heim", "heis", "mif1", "msf1":
+			return imagemeta.HEIF, "HEIF"
+		}
+	case bytes.HasPrefix(buf, []byte("GIF8")):
+		return imagemeta.ImageFormatAuto, "GIF"
+	case bytes.HasPrefix(buf, []byte("BM")):
+		return imagemeta.ImageFormatAuto, "BMP"
+	}
+	return imagemeta.ImageFormatAuto, ""
+}
+
+// tagInt 将EXIF整型标签值转换为int（imagemeta 对 SHORT/LONG 分别返回 uint16/uint32）
+func tagInt(v any) int {
+	switch n := v.(type) {
+	case uint16:
+		return int(n)
+	case uint32:
+		return int(n)
+	}
+	return 0
 }

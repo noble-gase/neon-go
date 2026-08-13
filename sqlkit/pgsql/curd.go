@@ -11,7 +11,7 @@ import (
 	"github.com/noble-gase/neon/sqlkit/internal"
 )
 
-// M 用于 PostgreSQL 的 INSERT & UPDATE
+// M 用于 INSERT & UPDATE
 type M map[Column]any
 
 func (m M) Split() (cols ColumnList, vals []any) {

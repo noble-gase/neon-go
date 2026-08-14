@@ -80,7 +80,7 @@ func NewReader(config kafka.ReaderConfig) *Reader {
 		ctx:    ctx,
 		cancel: cancel,
 	}
-	closekit.Add("kafka-reader:"+config.Topic, closekit.P7, func() error {
+	closekit.Add("kafka-reader:"+config.Topic, closekit.P60, func() error {
 		return r.Close()
 	})
 	return r

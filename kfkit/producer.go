@@ -65,7 +65,7 @@ func NewProducer(name string, w *kafka.Writer) *Producer {
 	p := &Producer{
 		writer: w,
 	}
-	closekit.Add("kafka-writer:"+name, closekit.P7, func() error {
+	closekit.Add("kafka-writer:"+name, closekit.P60, func() error {
 		return p.Close()
 	})
 	return p

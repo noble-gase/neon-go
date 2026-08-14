@@ -55,7 +55,7 @@ func NewDB(name string, cfg *Config) (*sql.DB, error) {
 	db.SetConnMaxIdleTime(time.Duration(cfg.Options.ConnMaxIdleTime) * time.Second)
 	db.SetConnMaxLifetime(time.Duration(cfg.Options.ConnMaxLifetime) * time.Second)
 
-	closekit.Add("db:"+name, closekit.P10, func() error {
+	closekit.Add("db:"+name, closekit.P90, func() error {
 		return db.Close()
 	})
 	return db, nil

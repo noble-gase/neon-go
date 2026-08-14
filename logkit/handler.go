@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"os"
 
+	"github.com/noble-gase/neon/closekit"
 	"github.com/noble-gase/neon/helper"
 )
 
@@ -18,12 +19,15 @@ type contextHandler struct {
 func (h *contextHandler) Handle(ctx context.Context, r slog.Record) error {
 	r.AddAttrs(
 		slog.String("hostname", hostname),
-		slog.String(helper.XTraceId, helper.MDTraceIdFromCtx(ctx)),
+		slog.String(helper.XTraceID, helper.MDTraceIDFromCtx(ctx)),
 	)
 	return h.Handler.Handle(ctx, r)
 }
 
-func NewContextHandler(w io.Writer, opts *slog.HandlerOptions) slog.Handler {
+func NewContextHandler(w io.WriteCloser, opts *slog.HandlerOptions) slog.Handler {
+	closekit.Add("log", closekit.P100, func() error {
+		return w.Close()
+	})
 	return &contextHandler{
 		Handler: slog.NewJSONHandler(w, opts),
 	}

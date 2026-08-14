@@ -32,7 +32,7 @@ func InitConsumer(brokers []string, consumers ...Consumer) {
 
 func HandleMessage(group string, handler Handler) func(msg kafka.Message) error {
 	return func(msg kafka.Message) (err error) {
-		ctx, cancel := context.WithTimeout(helper.CtxWithTraceId(context.Background()), 10*time.Second)
+		ctx, cancel := context.WithTimeout(helper.CtxWithTraceID(context.Background()), 10*time.Second)
 		defer cancel()
 
 		now := time.Now()
@@ -75,7 +75,7 @@ func InitAsyncConsumer(pool worker.Pool, brokers []string, consumers ...Consumer
 
 func AsyncHandleMessage(pool worker.Pool, group string, handler Handler) func(msg kafka.Message) error {
 	return func(msg kafka.Message) error {
-		ctx := helper.CtxWithTraceId(context.Background())
+		ctx := helper.CtxWithTraceID(context.Background())
 
 		_ = pool.Go(ctx, func(ctx context.Context) {
 			ctx, cancel := context.WithTimeout(ctx, 10*time.Second)

@@ -10,7 +10,7 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-const XTraceId = "x-trace-id"
+var XTraceID = "x-trace-id"
 
 // CtxWithMDValue sets key-value pairs to the incoming metadata
 // and returns a new context.
@@ -23,20 +23,20 @@ func CtxWithMDValue(ctx context.Context, key string, vals ...string) context.Con
 	return metadata.NewIncomingContext(ctx, md)
 }
 
-// CtxWithTraceId ensures a trace ID exists in the incoming metadata.
+// CtxWithTraceID ensures a trace ID exists in the incoming metadata.
 // If absent, a new trace ID is generated and attached.
-func CtxWithTraceId(ctx context.Context) context.Context {
+func CtxWithTraceID(ctx context.Context) context.Context {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
 		md = metadata.Pairs()
 	}
-	if len(md.Get(XTraceId)) != 0 {
+	if len(md.Get(XTraceID)) != 0 {
 		return ctx
 	}
 
 	traceId := strings.ReplaceAll(uuid.New().String(), "-", "")
 
-	md.Set(XTraceId, traceId)
+	md.Set(XTraceID, traceId)
 	return metadata.NewIncomingContext(ctx, md)
 }
 
@@ -87,6 +87,6 @@ func MDFloatFromCtx[T constraints.Float](ctx context.Context, key string) T {
 }
 
 // MDTraceIdFromCtx returns the trace ID from incoming metadata.
-func MDTraceIdFromCtx(ctx context.Context) string {
-	return MDStrFromCtx(ctx, XTraceId)
+func MDTraceIDFromCtx(ctx context.Context) string {
+	return MDStrFromCtx(ctx, XTraceID)
 }

@@ -23,23 +23,21 @@ func BindJSON(r *http.Request, obj any) error {
 }
 
 // BindProto 解析Proto请求体并校验
-func BindProto(r *http.Request, msg proto.Message, protovalidate bool) error {
+func BindProto(r *http.Request, msg proto.Message) error {
 	if err := ParseProto(r, msg); err != nil {
 		return err
-	}
-	if protovalidate {
-		return protokit.Validate(msg)
 	}
 	return validkit.ValidateStruct(msg)
 }
 
 // ParseProto 解析Proto请求体
 func ParseProto(r *http.Request, msg proto.Message) error {
-	if r.Method == http.MethodPost || r.Method == http.MethodPut || r.Method == http.MethodPatch {
+	switch r.Method {
+	case http.MethodPost, http.MethodPut, http.MethodPatch:
 		switch ContentType(r.Header) {
 		case ContentForm, ContentMultipartForm:
 			if r.PostForm == nil {
-				r.ParseMultipartForm(1 << 20)
+				_ = r.ParseMultipartForm(1 << 20)
 			}
 			return protokit.ValuesToMessage(msg, r.PostForm)
 		case ContentJSON:
@@ -51,6 +49,7 @@ func ParseProto(r *http.Request, msg proto.Message) error {
 		default:
 			return errors.New("unsupported Content-Type")
 		}
+	default:
+		return protokit.ValuesToMessage(msg, r.URL.Query())
 	}
-	return protokit.ValuesToMessage(msg, r.URL.Query())
 }

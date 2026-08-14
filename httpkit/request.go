@@ -13,14 +13,14 @@ import (
 	"github.com/go-resty/resty/v2"
 )
 
-type ApiResult[T any] struct {
+type Result[T any] struct {
 	Code    int    `json:"code"`
 	Msg     string `json:"msg"`
 	Message string `json:"message"`
 	Data    T      `json:"data"`
 }
 
-func (r *ApiResult[T]) Error(ok int) error {
+func (r *Result[T]) Error(ok int) error {
 	if r == nil || r.Code == ok {
 		return nil
 	}
@@ -35,7 +35,7 @@ func (r *ApiResult[T]) Error(ok int) error {
 	return fmt.Errorf("[%d] %s", r.Code, strings.Join(msgs, "; "))
 }
 
-func HttpGet(ctx context.Context, url string, query url.Values, header ...http.Header) (resp *resty.Response, err error) {
+func Get(ctx context.Context, url string, query url.Values, header ...http.Header) (resp *resty.Response, err error) {
 	start := time.Now()
 
 	defer func() {
@@ -72,7 +72,7 @@ func HttpGet(ctx context.Context, url string, query url.Values, header ...http.H
 	return
 }
 
-func HttpGetX[T any](ctx context.Context, url string, query url.Values, header ...http.Header) (ret *ApiResult[T], err error) {
+func GetX[T any](ctx context.Context, url string, query url.Values, header ...http.Header) (ret *Result[T], err error) {
 	var resp *resty.Response
 
 	start := time.Now()
@@ -100,7 +100,7 @@ func HttpGetX[T any](ctx context.Context, url string, query url.Values, header .
 		slog.LogAttrs(ctx, level, "http request", attrs...)
 	}()
 
-	ret = new(ApiResult[T])
+	ret = new(Result[T])
 
 	req := Client().R().
 		SetContext(ctx).
@@ -117,7 +117,7 @@ func HttpGetX[T any](ctx context.Context, url string, query url.Values, header .
 	return
 }
 
-func HttpPost(ctx context.Context, url string, body any, header ...http.Header) (resp *resty.Response, err error) {
+func Post(ctx context.Context, url string, body any, header ...http.Header) (resp *resty.Response, err error) {
 	start := time.Now()
 
 	defer func() {
@@ -154,7 +154,7 @@ func HttpPost(ctx context.Context, url string, body any, header ...http.Header) 
 	return
 }
 
-func HttpPostX[T any](ctx context.Context, url string, body any, header ...http.Header) (ret *ApiResult[T], err error) {
+func PostX[T any](ctx context.Context, url string, body any, header ...http.Header) (ret *Result[T], err error) {
 	var resp *resty.Response
 
 	start := time.Now()
@@ -182,7 +182,7 @@ func HttpPostX[T any](ctx context.Context, url string, body any, header ...http.
 		slog.LogAttrs(ctx, level, "http request", attrs...)
 	}()
 
-	ret = new(ApiResult[T])
+	ret = new(Result[T])
 
 	req := Client().R().
 		SetContext(ctx).
@@ -199,7 +199,7 @@ func HttpPostX[T any](ctx context.Context, url string, body any, header ...http.
 	return
 }
 
-func HttpForm(ctx context.Context, url string, form url.Values, header ...http.Header) (resp *resty.Response, err error) {
+func Form(ctx context.Context, url string, form url.Values, header ...http.Header) (resp *resty.Response, err error) {
 	start := time.Now()
 
 	defer func() {
@@ -236,7 +236,7 @@ func HttpForm(ctx context.Context, url string, form url.Values, header ...http.H
 	return
 }
 
-func HttpFormX[T any](ctx context.Context, url string, form url.Values, header ...http.Header) (ret *ApiResult[T], err error) {
+func FormX[T any](ctx context.Context, url string, form url.Values, header ...http.Header) (ret *Result[T], err error) {
 	var resp *resty.Response
 
 	start := time.Now()
@@ -264,7 +264,7 @@ func HttpFormX[T any](ctx context.Context, url string, form url.Values, header .
 		slog.LogAttrs(ctx, level, "http request", attrs...)
 	}()
 
-	ret = new(ApiResult[T])
+	ret = new(Result[T])
 
 	req := Client().R().
 		SetContext(ctx).

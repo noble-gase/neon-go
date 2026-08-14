@@ -84,7 +84,7 @@ func NewClient(name string, cfg *Config) (redis.UniversalClient, error) {
 		return nil, err
 	}
 
-	closekit.Add("redis-client:"+name, closekit.P9, func() error {
+	closekit.Add("redis:"+name, closekit.P80, func() error {
 		return client.Close()
 	})
 	return client, nil

@@ -19,7 +19,7 @@ type contextHandler struct {
 func (h *contextHandler) Handle(ctx context.Context, r slog.Record) error {
 	r.AddAttrs(
 		slog.String("hostname", hostname),
-		slog.String(helper.XTraceID, helper.MDTraceIDFromCtx(ctx)),
+		slog.String("trace_id", helper.MDTraceIDFromCtx(ctx)),
 	)
 	return h.Handler.Handle(ctx, r)
 }

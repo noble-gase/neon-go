@@ -2,6 +2,33 @@ package iokit
 
 import "io"
 
+// NopWriteCloser returns a WriteCloser with a no-op Close method wrapping
+// the provided Writer w.
+// If w implements ReaderFrom, the returned WriteCloser will implement ReaderFrom
+// by forwarding calls to w.
+func NopWriteCloser(w io.Writer) io.WriteCloser {
+	if _, ok := w.(io.ReaderFrom); ok {
+		return nopWriteCloserReaderFrom{w}
+	}
+	return nopWriteCloser{w}
+}
+
+type nopWriteCloser struct {
+	io.Writer
+}
+
+func (nopWriteCloser) Close() error { return nil }
+
+type nopWriteCloserReaderFrom struct {
+	io.Writer
+}
+
+func (nopWriteCloserReaderFrom) Close() error { return nil }
+
+func (c nopWriteCloserReaderFrom) ReadFrom(r io.Reader) (n int64, err error) {
+	return c.Writer.(io.ReaderFrom).ReadFrom(r)
+}
+
 // LimitWriter returns a Writer that writes to w
 // but discards any bytes written beyond n bytes.
 // The underlying implementation is a *LimitedWriter.

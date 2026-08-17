@@ -17,10 +17,11 @@ type contextHandler struct {
 }
 
 func (h *contextHandler) Handle(ctx context.Context, r slog.Record) error {
-	r.AddAttrs(
-		slog.String("hostname", hostname),
-		slog.String("trace_id", helper.MDTraceIDFromCtx(ctx)),
-	)
+	r.AddAttrs(slog.String("hostname", hostname))
+	// traceId
+	if traceId := helper.MDTraceIDFromCtx(ctx); traceId != "" {
+		r.AddAttrs(slog.String("trace_id", traceId))
+	}
 	return h.Handler.Handle(ctx, r)
 }
 

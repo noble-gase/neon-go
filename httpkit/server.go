@@ -55,6 +55,6 @@ func Serve(ctx context.Context, addr string, chiFunc func(r chi.Router), srvFunc
 	shutCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 	if err := srv.Shutdown(shutCtx); err != nil {
-		slog.ErrorContext(ctx, "server shutdown failed", slog.String("error", err.Error()))
+		slog.ErrorContext(ctx, "server shutdown failed", slog.Any("error", err))
 	}
 }

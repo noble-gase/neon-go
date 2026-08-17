@@ -110,7 +110,7 @@ func Log(next http.Handler) http.Handler {
 		if r.Body != nil && r.Body != http.NoBody {
 			b, err := io.ReadAll(r.Body)
 			if err != nil {
-				slog.ErrorContext(r.Context(), "request body read failed", slog.String("error", err.Error()))
+				slog.ErrorContext(r.Context(), "request body read failed", slog.Any("error", err))
 				result.Err(err).JSON(w, r)
 				return
 			}

@@ -14,19 +14,25 @@ type Handler = func(ctx context.Context, msg kafka.Message) error
 
 // Consumer Kafka消费者
 type Consumer struct {
-	Topic   string
-	Group   string
+	Group string
+	Topic []Topic
+}
+
+type Topic struct {
+	Name    string
 	Handler Handler
 }
 
 // InitConsumer 同步消费
 func InitConsumer(brokers []string, consumers ...Consumer) {
 	for _, c := range consumers {
-		conf := DefaultReaderConfig(brokers, c.Group, c.Topic)
-		handle := HandleMessage(c.Group, c.Handler)
+		for _, t := range c.Topic {
+			conf := DefaultReaderConfig(brokers, c.Group, t.Name)
+			handle := HandleMessage(c.Group, t.Handler)
 
-		reader := NewReader(conf)
-		go reader.Handle(handle)
+			reader := NewReader(conf)
+			go reader.Handle(handle)
+		}
 	}
 }
 
@@ -65,11 +71,13 @@ func HandleMessage(group string, handler Handler) func(msg kafka.Message) error 
 // InitAsyncConsumer 异步并发消费
 func InitAsyncConsumer(pool worker.Pool, brokers []string, consumers ...Consumer) {
 	for _, c := range consumers {
-		conf := DefaultReaderConfig(brokers, c.Group, c.Topic)
-		handle := AsyncHandleMessage(pool, c.Group, c.Handler)
+		for _, t := range c.Topic {
+			conf := DefaultReaderConfig(brokers, c.Group, t.Name)
+			handle := AsyncHandleMessage(pool, c.Group, t.Handler)
 
-		reader := NewReader(conf)
-		go reader.Handle(handle)
+			reader := NewReader(conf)
+			go reader.Handle(handle)
+		}
 	}
 }
 

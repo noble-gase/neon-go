@@ -5,10 +5,12 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"io"
 	"regexp"
 	"strings"
 
+	"github.com/go-sql-driver/mysql"
 	"github.com/hashicorp/go-version"
 )
 
@@ -63,8 +65,8 @@ func VersionCompare(rangeVer, curVer string) (bool, error) {
 		return false, err
 	}
 
-	orVers := strings.Split(rangeVer, "|")
-	for _, ver := range orVers {
+	orVers := strings.SplitSeq(rangeVer, "|")
+	for ver := range orVers {
 		andVers := strings.Split(ver, "&")
 		constraints, err := version.NewConstraint(strings.Join(andVers, ","))
 		if err != nil {
@@ -77,17 +79,34 @@ func VersionCompare(rangeVer, curVer string) (bool, error) {
 	return false, nil
 }
 
-// IsUniqueDuplicateError 判断是否「唯一索引冲突」错误
+// IsUniqueDuplicateError 判断是否为唯一索引或主键冲突，支持 %w 包装。
+// 已知驱动按错误码判断，其他错误使用文本兜底。
 func IsUniqueDuplicateError(err error) bool {
 	if err == nil {
 		return false
 	}
+
+	if e, ok := errors.AsType[*mysql.MySQLError](err); ok && e != nil {
+		return e.Number == 1062
+	}
+
+	var stateErr interface{ SQLState() string }
+	if errors.As(err, &stateErr) {
+		return stateErr.SQLState() == "23505"
+	}
+
+	if matched, unique := sqliteUniqueError(err); matched {
+		return unique
+	}
+
+	msg := strings.ToLower(err.Error())
 	for _, s := range []string{
-		"Error 1062",                 // MySQL
-		"violates unique constraint", // Postgres
-		"UNIQUE constraint failed",   // SQLite
+		"duplicate entry",               // MySQL
+		"violates unique constraint",    // PostgreSQL
+		"unique constraint failed",      // SQLite
+		"primary key constraint failed", // SQLite
 	} {
-		if strings.Contains(err.Error(), s) {
+		if strings.Contains(msg, s) {
 			return true
 		}
 	}

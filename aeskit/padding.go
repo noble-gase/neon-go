@@ -1,9 +1,6 @@
 package aeskit
 
-import (
-	"bytes"
-	"errors"
-)
+import "errors"
 
 func pkcs7_padding(data []byte, blockSize int) ([]byte, error) {
 	if blockSize <= 0 || blockSize > 255 {
@@ -11,6 +8,7 @@ func pkcs7_padding(data []byte, blockSize int) ([]byte, error) {
 	}
 
 	pad := blockSize - len(data)%blockSize
+
 	out := make([]byte, len(data)+pad)
 	copy(out, data)
 	for i := len(data); i < len(out); i++ {
@@ -33,8 +31,11 @@ func pkcs7_unpadding(data []byte, blockSize int) ([]byte, error) {
 	if pad == 0 || pad > blockSize {
 		return nil, errors.New("aeskit: invalid padding")
 	}
-	if !bytes.Equal(data[length-pad:], bytes.Repeat([]byte{byte(pad)}, pad)) {
-		return nil, errors.New("aeskit: invalid padding")
+
+	for _, b := range data[length-pad:] {
+		if b != byte(pad) {
+			return nil, errors.New("aeskit: invalid padding")
+		}
 	}
 	return data[:length-pad], nil
 }

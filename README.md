@@ -13,6 +13,8 @@ go get -u github.com/noble-gase/neon
 | 模块     | 说明                                                                                         |
 | -------- | -------------------------------------------------------------------------------------------- |
 | aeskit   | 封装 `AES` 相关操作                                                                          |
+| deskit   | 封装 `DES` 相关操作                                                                          |
+| rsakit   | 封装 `RSA` 相关操作                                                                          |
 | array    | 切片常用操作                                                                                 |
 | closekit | 按优先级管理并关闭资源                                                                       |
 | conv     | 类型转换                                                                                     |
@@ -25,7 +27,6 @@ go get -u github.com/noble-gase/neon
 | redkit   | 基于 `singleflight` 封装 Redis 常用操作                                                      |
 | redlock  | 基于 Redis 的分布式锁                                                                        |
 | retry    | 重试操作                                                                                     |
-| rsakit   | 封装 `RSA` 相关操作                                                                          |
 | sqlkit   | 包含DB初始化和事务等封装 和 基于 [`Jet`](https://github.com/go-jet/jet) 的 curd 封装         |
 | stepkit  | 分批次处理切片                                                                               |
 | kfkit    | 封装 `kafka` 生产者 和 消费者                                                                |

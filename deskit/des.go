@@ -1,17 +1,18 @@
-package aeskit
+// Package deskit 封装 DES 的 CBC、ECB、CTR、CFB、OFB 加解密操作。
+// 密钥长度为 8 字节，CBC、CTR、CFB 和 OFB 的 IV 长度为 8 字节。
+package deskit
 
 import (
 	"bytes"
-	"crypto/aes"
 	"crypto/cipher"
+	"crypto/des"
 	"encoding/base64"
 	"errors"
 )
 
 // CipherText 加密文本
 type CipherText struct {
-	bytes   []byte
-	tagsize int
+	bytes []byte
 }
 
 // String 返回加密数据base64字符串
@@ -24,21 +25,11 @@ func (ct *CipherText) Bytes() []byte {
 	return bytes.Clone(ct.bytes)
 }
 
-// Data 返回GCM密文数据的副本，不包含tag
-func (ct *CipherText) Data() []byte {
-	return bytes.Clone(ct.bytes[:len(ct.bytes)-ct.tagsize])
-}
+// ------------------------------------ DES-CBC ------------------------------------
 
-// Tag 返回GCM加密数据的tag副本
-func (ct *CipherText) Tag() []byte {
-	return bytes.Clone(ct.bytes[len(ct.bytes)-ct.tagsize:])
-}
-
-// ------------------------------------ AES-CBC ------------------------------------
-
-// EncryptCBC AES-CBC 加密(pkcs#7, 默认填充BlockSize；paddingSize须为BlockSize的倍数且不超过255)
+// EncryptCBC DES-CBC 加密(pkcs#7, 默认填充BlockSize；paddingSize须为BlockSize的倍数且不超过255)
 func EncryptCBC(key, iv, data []byte, paddingSize ...int) (*CipherText, error) {
-	block, err := aes.NewCipher(key)
+	block, err := des.NewCipher(key)
 	if err != nil {
 		return nil, err
 	}
@@ -66,9 +57,9 @@ func EncryptCBC(key, iv, data []byte, paddingSize ...int) (*CipherText, error) {
 	return &CipherText{bytes: out}, nil
 }
 
-// DecryptCBC AES-CBC 解密(pkcs#7, 默认填充BlockSize；paddingSize须为BlockSize的倍数且不超过255；若加密时使用了自定义 paddingSize，解密需传入相同值)
+// DecryptCBC DES-CBC 解密(pkcs#7, 默认填充BlockSize；paddingSize须为BlockSize的倍数且不超过255；若加密时使用了自定义 paddingSize，解密需传入相同值)
 func DecryptCBC(key, iv, data []byte, paddingSize ...int) ([]byte, error) {
-	block, err := aes.NewCipher(key)
+	block, err := des.NewCipher(key)
 	if err != nil {
 		return nil, err
 	}
@@ -92,11 +83,11 @@ func DecryptCBC(key, iv, data []byte, paddingSize ...int) ([]byte, error) {
 	return pkcs7_unpadding(out, blockSize)
 }
 
-// ------------------------------------ AES-ECB ------------------------------------
+// ------------------------------------ DES-ECB ------------------------------------
 
-// EncryptECB AES-ECB 加密(pkcs#7, 默认填充BlockSize；paddingSize须为BlockSize的倍数且不超过255)
+// EncryptECB DES-ECB 加密(pkcs#7, 默认填充BlockSize；paddingSize须为BlockSize的倍数且不超过255)
 func EncryptECB(key, data []byte, paddingSize ...int) (*CipherText, error) {
-	block, err := aes.NewCipher(key)
+	block, err := des.NewCipher(key)
 	if err != nil {
 		return nil, err
 	}
@@ -121,9 +112,9 @@ func EncryptECB(key, data []byte, paddingSize ...int) (*CipherText, error) {
 	return &CipherText{bytes: out}, nil
 }
 
-// DecryptECB AES-ECB 解密(pkcs#7, 默认填充BlockSize；paddingSize须为BlockSize的倍数且不超过255；若加密时使用了自定义 paddingSize，解密需传入相同值)
+// DecryptECB DES-ECB 解密(pkcs#7, 默认填充BlockSize；paddingSize须为BlockSize的倍数且不超过255；若加密时使用了自定义 paddingSize，解密需传入相同值)
 func DecryptECB(key, data []byte, paddingSize ...int) ([]byte, error) {
-	block, err := aes.NewCipher(key)
+	block, err := des.NewCipher(key)
 	if err != nil {
 		return nil, err
 	}
@@ -144,11 +135,11 @@ func DecryptECB(key, data []byte, paddingSize ...int) ([]byte, error) {
 	return pkcs7_unpadding(out, blockSize)
 }
 
-// ------------------------------------ AES-CTR ------------------------------------
+// ------------------------------------ DES-CTR ------------------------------------
 
-// EncryptCTR AES-CTR 加密
+// EncryptCTR DES-CTR 加密
 func EncryptCTR(key, iv, data []byte) (*CipherText, error) {
-	block, err := aes.NewCipher(key)
+	block, err := des.NewCipher(key)
 	if err != nil {
 		return nil, err
 	}
@@ -163,9 +154,9 @@ func EncryptCTR(key, iv, data []byte) (*CipherText, error) {
 	return &CipherText{bytes: out}, nil
 }
 
-// DecryptCTR AES-CTR 解密
+// DecryptCTR DES-CTR 解密
 func DecryptCTR(key, iv, data []byte) ([]byte, error) {
-	block, err := aes.NewCipher(key)
+	block, err := des.NewCipher(key)
 	if err != nil {
 		return nil, err
 	}
@@ -180,71 +171,74 @@ func DecryptCTR(key, iv, data []byte) ([]byte, error) {
 	return out, nil
 }
 
-// ------------------------------------ AES-GCM ------------------------------------
+// ------------------------------------ DES-CFB ------------------------------------
 
-// GCMOption AES-GCM 加密选项(二选一)，指定 TagSize[12, 16] 和 NonceSize(0, ~)
-type GCMOption struct {
-	TagSize   int
-	NonceSize int
+// EncryptCFB DES-CFB 加密(CFB64，无填充)
+func EncryptCFB(key, iv, data []byte) (*CipherText, error) {
+	block, err := des.NewCipher(key)
+	if err != nil {
+		return nil, err
+	}
+	if len(iv) != block.BlockSize() {
+		return nil, errors.New("IV length must equal block size")
+	}
+
+	out := make([]byte, len(data))
+	stream := cipher.NewCFBEncrypter(block, iv)
+	stream.XORKeyStream(out, data)
+
+	return &CipherText{bytes: out}, nil
 }
 
-// EncryptGCM AES-GCM 加密 (默认：NonceSize = 12 & TagSize = 16)
-func EncryptGCM(key, nonce, data, aad []byte, opt *GCMOption) (*CipherText, error) {
-	block, err := aes.NewCipher(key)
+// DecryptCFB DES-CFB 解密(CFB64，无填充)
+func DecryptCFB(key, iv, data []byte) ([]byte, error) {
+	block, err := des.NewCipher(key)
 	if err != nil {
 		return nil, err
 	}
-
-	var aead cipher.AEAD
-	if opt != nil && (opt.TagSize != 0 || opt.NonceSize != 0) {
-		if opt.TagSize != 0 {
-			aead, err = cipher.NewGCMWithTagSize(block, opt.TagSize)
-		} else {
-			aead, err = cipher.NewGCMWithNonceSize(block, opt.NonceSize)
-		}
-	} else {
-		aead, err = cipher.NewGCM(block)
-	}
-	if err != nil {
-		return nil, err
+	if len(iv) != block.BlockSize() {
+		return nil, errors.New("IV length must equal block size")
 	}
 
-	if len(nonce) != aead.NonceSize() {
-		return nil, errors.New("incorrect nonce length given to GCM")
-	}
-	if uint64(len(data)) > ((1<<32)-2)*uint64(block.BlockSize()) {
-		return nil, errors.New("message too large for GCM")
-	}
+	out := make([]byte, len(data))
+	stream := cipher.NewCFBDecrypter(block, iv)
+	stream.XORKeyStream(out, data)
 
-	return &CipherText{
-		bytes:   aead.Seal(nil, nonce, data, aad),
-		tagsize: aead.Overhead(),
-	}, nil
+	return out, nil
 }
 
-// DecryptGCM AES-GCM 解密 (默认：NonceSize = 12 & TagSize = 16)
-func DecryptGCM(key, nonce []byte, data, aad []byte, opt *GCMOption) ([]byte, error) {
-	block, err := aes.NewCipher(key)
+// ------------------------------------ DES-OFB ------------------------------------
+
+// EncryptOFB DES-OFB 加密(无填充)
+func EncryptOFB(key, iv, data []byte) (*CipherText, error) {
+	block, err := des.NewCipher(key)
 	if err != nil {
 		return nil, err
 	}
-
-	var aead cipher.AEAD
-	if opt == nil || (opt.TagSize == 0 && opt.NonceSize == 0) {
-		aead, err = cipher.NewGCM(block)
-	} else {
-		if opt.TagSize != 0 {
-			aead, err = cipher.NewGCMWithTagSize(block, opt.TagSize)
-		} else {
-			aead, err = cipher.NewGCMWithNonceSize(block, opt.NonceSize)
-		}
+	if len(iv) != block.BlockSize() {
+		return nil, errors.New("IV length must equal block size")
 	}
+
+	out := make([]byte, len(data))
+	stream := cipher.NewOFB(block, iv)
+	stream.XORKeyStream(out, data)
+
+	return &CipherText{bytes: out}, nil
+}
+
+// DecryptOFB DES-OFB 解密(无填充)
+func DecryptOFB(key, iv, data []byte) ([]byte, error) {
+	block, err := des.NewCipher(key)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(nonce) != aead.NonceSize() {
-		return nil, errors.New("incorrect nonce length given to GCM")
+	if len(iv) != block.BlockSize() {
+		return nil, errors.New("IV length must equal block size")
 	}
-	return aead.Open(nil, nonce, data, aad)
+
+	out := make([]byte, len(data))
+	stream := cipher.NewOFB(block, iv)
+	stream.XORKeyStream(out, data)
+
+	return out, nil
 }

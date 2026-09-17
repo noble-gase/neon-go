@@ -86,19 +86,23 @@ func IsUniqueDuplicateError(err error) bool {
 		return false
 	}
 
-	if e, ok := errors.AsType[*mysql.MySQLError](err); ok && e != nil {
-		return e.Number == 1062
+	// MySQL 错误码判断
+	if e, ok := errors.AsType[*mysql.MySQLError](err); ok {
+		return e != nil && e.Number == 1062
 	}
 
+	// PostgreSQL 错误码判断
 	var stateErr interface{ SQLState() string }
 	if errors.As(err, &stateErr) {
 		return stateErr.SQLState() == "23505"
 	}
 
+	// SQLite 错误码判断
 	if matched, unique := sqliteUniqueError(err); matched {
 		return unique
 	}
 
+	// 文本兜底判断
 	msg := strings.ToLower(err.Error())
 	for _, s := range []string{
 		"duplicate entry",               // MySQL
